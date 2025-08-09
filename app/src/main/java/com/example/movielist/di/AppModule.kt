@@ -39,7 +39,9 @@ abstract class AppModule {
                 context,
                 AppDatabase::class.java,
                 AppDatabase.DATABASE_NAME
-            ).build()
+            )
+            .fallbackToDestructiveMigration()
+            .build()
 
         @Provides
         fun provideMovieDao(database: AppDatabase): MovieDao = database.movieDao()

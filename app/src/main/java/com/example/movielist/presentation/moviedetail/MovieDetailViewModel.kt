@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MovieDetailViewModel @Inject constructor(
-    private val getMovieDetailUseCase: GetMovieDetailUseCase
+    private val getMovieDetailUseCase: GetMovieDetailUseCase,
 ) : ViewModel() {
 
     private val _detailState = MutableStateFlow<UiState<MovieDetail>>(UiState.Loading)
@@ -31,11 +31,21 @@ class MovieDetailViewModel @Inject constructor(
             try {
                 val movieDetail = getMovieDetailUseCase(id)
                 _detailState.value = UiState.Success(movieDetail)
-                // Note: In a real implementation, we'd detect if this came from cache
-                // For now, we assume cached data doesn't throw exceptions
             } catch (e: Exception) {
-                _detailState.value = UiState.Error(e.message ?: "Failed to load movie details")
+                _showOfflineIndicator.value = true
+                _detailState.value = UiState.Error(getNetworkErrorMessage(e))
             }
+        }
+    }
+
+    private fun getNetworkErrorMessage(exception: Exception): String {
+        return when {
+            exception.message?.contains("Unable to resolve host") == true ||
+            exception.message?.contains("No address associated with hostname") == true ->
+                "No internet connection. Showing cached details if available."
+            exception.message?.contains("timeout") == true ->
+                "Connection timeout. Please check your internet connection."
+            else -> "Network error occurred. ${exception.message ?: "Please try again."}"
         }
     }
 

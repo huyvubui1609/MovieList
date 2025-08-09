@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -97,7 +98,6 @@ fun MovieDetailScreen(
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                             context.startActivity(intent)
                         } catch (e: Exception) {
-                            // Handle error silently
                         }
                     },
                     modifier = Modifier.padding(paddingValues)
@@ -111,11 +111,13 @@ fun MovieDetailScreen(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = currentDetailState.message,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        SelectionContainer {
+                            Text(
+                                text = currentDetailState.message,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
                         Button(onClick = { viewModel.retry(movieId) }) {
                             Text("Retry")
                         }
@@ -150,7 +152,6 @@ private fun MovieDetailContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Offline indicator
         if (showOfflineIndicator) {
             Card(
                 modifier = Modifier
@@ -168,7 +169,6 @@ private fun MovieDetailContent(
             }
         }
 
-        // Movie poster
         val posterUrl = movieDetail.posterPath?.let { "https://image.tmdb.org/t/p/w500$it" }
         if (posterUrl != null) {
             AsyncImage(
@@ -188,14 +188,12 @@ private fun MovieDetailContent(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Title
             Text(
                 text = movieDetail.title,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
 
-            // Runtime and Vote Average
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -213,7 +211,6 @@ private fun MovieDetailContent(
                 )
             }
 
-            // Overview
             movieDetail.overview?.let { overview ->
                 if (overview.isNotBlank()) {
                     Text(
@@ -229,7 +226,6 @@ private fun MovieDetailContent(
                 }
             }
 
-            // Homepage
             movieDetail.homepage?.let { homepage ->
                 if (homepage.isNotBlank() && (homepage.startsWith("http://") || homepage.startsWith("https://"))) {
                     Text(

@@ -2,6 +2,7 @@ package com.example.movielist.data.repository
 
 import com.example.movielist.data.local.MovieDao
 import com.example.movielist.data.local.entities.MovieDetailEntity
+import com.example.movielist.data.local.entities.SearchCacheEntity
 import com.example.movielist.data.local.entities.TrendingCacheEntity
 import com.example.movielist.data.mapper.DtoMapper
 import com.example.movielist.data.mapper.JsonMapper
@@ -50,8 +51,34 @@ class MovieRepositoryImpl @Inject constructor(
     }
 
     override suspend fun searchMovies(query: String, page: Int): List<Movie> {
-        val response = tmdbService.searchMovies(query, page)
-        return response.results.map { dtoMapper.toDomain(it) }
+        val searchKey = "${query}_$page"
+        val cached = dao.getSearchCache(searchKey)
+        if (cached != null && CacheValidator.isValid(cached.lastFetched)) {
+            logger.d("Repo", "Returning cached search results for query='$query' page=$page")
+            return jsonMapper.fromMoviesJson(cached.moviesJson)
+        }
+
+        try {
+            val response = tmdbService.searchMovies(query, page)
+            val movies = response.results.map { dtoMapper.toDomain(it) }
+            dao.insertSearchCache(
+                SearchCacheEntity(
+                    searchKey = searchKey,
+                    query = query,
+                    page = page,
+                    moviesJson = jsonMapper.toJson(response.results),
+                    lastFetched = System.currentTimeMillis()
+                )
+            )
+            logger.d("Repo", "Fetched search results from network and cached query='$query' page=$page")
+            return movies
+        } catch (e: Exception) {
+            if (cached != null) {
+                logger.d("Repo", "Network failed, returning stale search cache query='$query' page=$page")
+                return jsonMapper.fromMoviesJson(cached.moviesJson)
+            }
+            throw e
+        }
     }
 
     override suspend fun getMovieDetail(id: Int): MovieDetail {

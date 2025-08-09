@@ -1,5 +1,6 @@
 package com.example.movielist.presentation.movielist
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.movielist.domain.model.Movie
@@ -36,7 +37,6 @@ class MoviesListViewModel @Inject constructor(
     val showOfflineIndicator: StateFlow<Boolean> = _showOfflineIndicator.asStateFlow()
 
     init {
-        // Debounce search queries and trigger appropriate loading
         viewModelScope.launch {
             _searchQuery
                 .debounce(300)
@@ -56,7 +56,6 @@ class MoviesListViewModel @Inject constructor(
                 }
         }
 
-        // Load trending movies initially
         loadTrendingMovies()
     }
 
@@ -77,7 +76,8 @@ class MoviesListViewModel @Inject constructor(
                     _moviesState.value = UiState.Success(movies)
                 }
             } catch (e: Exception) {
-                _moviesState.value = UiState.Error(e.message ?: "Unknown error occurred")
+                _showOfflineIndicator.value = true
+                _moviesState.value = UiState.Error(getNetworkErrorMessage(e))
             }
         }
     }
@@ -95,8 +95,20 @@ class MoviesListViewModel @Inject constructor(
                     _moviesState.value = UiState.Success(movies)
                 }
             } catch (e: Exception) {
-                _moviesState.value = UiState.Error(e.message ?: "Search failed")
+                _showOfflineIndicator.value = true
+                _moviesState.value = UiState.Error(getNetworkErrorMessage(e))
             }
+        }
+    }
+
+    private fun getNetworkErrorMessage(exception: Exception): String {
+        return when {
+            exception.message?.contains("Unable to resolve host") == true ||
+            exception.message?.contains("No address associated with hostname") == true ->
+                "No internet connection. Showing cached results if available."
+            exception.message?.contains("timeout") == true ->
+                "Connection timeout. Please check your internet connection."
+            else -> "Network error occurred. ${exception.message ?: "Please try again."}"
         }
     }
 

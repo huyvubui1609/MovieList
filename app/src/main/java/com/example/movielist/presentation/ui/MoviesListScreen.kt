@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,7 +55,6 @@ fun MoviesListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Search bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = viewModel::onSearchQueryChanged,
@@ -64,7 +64,6 @@ fun MoviesListScreen(
                     .padding(16.dp)
             )
 
-            // Offline indicator
             if (showOfflineIndicator) {
                 Card(
                     modifier = Modifier
@@ -82,7 +81,6 @@ fun MoviesListScreen(
                 }
             }
 
-            // Header
             val headerText = if (searchQuery.isBlank()) "Trending movies" else "Search results"
             Text(
                 text = headerText,
@@ -90,7 +88,6 @@ fun MoviesListScreen(
                 modifier = Modifier.padding(16.dp)
             )
 
-            // Content
             val currentMoviesState = moviesState
             when (currentMoviesState) {
                 is UiState.Loading -> {
@@ -124,11 +121,13 @@ fun MoviesListScreen(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = currentMoviesState.message,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(16.dp)
-                            )
+                            SelectionContainer {
+                                Text(
+                                    text = currentMoviesState.message,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
                             Button(onClick = viewModel::retry) {
                                 Text("Retry")
                             }
